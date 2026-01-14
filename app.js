@@ -6,7 +6,7 @@ const app = express();
 const { default: mongoose } = require("mongoose");
 const path = require("path");
 const methodOverride = require("method-override");
-const ejsMate = require("ejs-Mate");
+const ejsMate = require("ejs-mate");
 const ExpressError = require("./utils/ExpressError.js");
 const session = require("express-session");
 const MongoStore = require('connect-mongo');
@@ -30,7 +30,7 @@ main()
      async function main(){
        mongoose.connect(dbURL);
      };
-
+app.engine("ejs", ejsMate);
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 app.use(express.urlencoded({extended: true}));
