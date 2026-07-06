@@ -1,4 +1,4 @@
-# 🏠 Airbnb Clone
+# 🏠 StayEase
 
 Hi, I’m Deepti 👋
 This is my **major full stack project**, inspired by Airbnb. I built this project to understand how real-world applications work — from frontend UI to backend logic and database integration.
