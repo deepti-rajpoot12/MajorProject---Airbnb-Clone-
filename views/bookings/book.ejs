@@ -1,0 +1,231 @@
+<% layout("/layouts/boilerplate") %>
+<main class="booking-checkout-page py-4 py-lg-5">
+    <div class="row justify-content-center">
+        <div class="col-xl-10">
+            <div class="card booking-checkout-card">
+
+                <div class="row g-0">
+
+                    <div class="col-md-5 booking-checkout-image-panel">
+                        <img
+                        src="<%= listing.image.url %>"
+                        alt="<%= listing.title %>"
+                        class="booking-page-img"
+                        >
+                        <div class="booking-checkout-image-overlay"></div>
+                        <div class="booking-checkout-stay-name">
+                            <span>Your selected stay</span>
+                            <strong><%= listing.title %></strong>
+                        </div>
+
+                    </div>
+
+                    <div class="col-md-7">
+
+                        <div class="card-body booking-form-pane">
+
+                            <p class="booking-page-kicker">Complete your reservation</p>
+                            <h1>Reserve your stay</h1>
+                            <p class="booking-form-location">
+                                <i class="fa-solid fa-location-dot"></i>
+                                <%= listing.location %>, <%= listing.country %>
+                            </p>
+                            <div class="booking-price-banner">
+                                <span>Price per night</span>
+                                <strong>₹<%= listing.price.toLocaleString("en-IN") %></strong>
+                            </div>
+
+                            <form id="payment-form">
+                                <div id="payment-feedback" class="payment-feedback" role="alert" aria-live="polite" hidden></div>
+
+                                <div class="row g-3">
+                                  <div class="col-sm-6">
+                                    <label class="form-label" for="check-in">Check-in</label>
+
+                                    <input
+                                        type="date"
+                                        id="check-in"
+                                        name="checkIn"
+                                        class="form-control"
+                                        required
+                                    >
+                                  </div>
+
+                                  <div class="col-sm-6">
+                                    <label class="form-label" for="check-out">Check-out</label>
+
+                                    <input
+                                        type="date"
+                                        id="check-out"
+                                        name="checkOut"
+                                        class="form-control"
+                                        required
+                                    >
+                                  </div>
+
+                                  <div class="col-12">
+                                    <label class="form-label" for="guests">Guests</label>
+
+                                    <input
+                                        type="number"
+                                        id="guests"
+                                        name="guests"
+                                        class="form-control"
+                                        min="1"
+                                        value="1"
+                                        required
+                                    >
+                                  </div>
+                                </div>
+
+                                <button id="pay-button" type="submit" class="btn btn-danger w-100">
+                                    <i class="fa-solid fa-lock"></i> Pay securely with Razorpay
+                                </button>
+                                <p class="booking-secure-note"><i class="fa-solid fa-shield-halved"></i> Your payment is processed securely by Razorpay.</p>
+
+                            </form>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+</main>
+
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script>
+  const paymentForm = document.getElementById("payment-form");
+  const payButton = document.getElementById("pay-button");
+  const paymentFeedback = document.getElementById("payment-feedback");
+  const checkInInput = document.getElementById("check-in");
+  const checkOutInput = document.getElementById("check-out");
+  const guestsInput = document.getElementById("guests");
+  const defaultButtonLabel = '<i class="fa-solid fa-lock"></i> Pay securely with Razorpay';
+
+  const today = new Date().toISOString().split("T")[0];
+  checkInInput.min = today;
+  checkOutInput.min = today;
+
+  function showPaymentMessage(message, type = "error") {
+    paymentFeedback.textContent = message;
+    paymentFeedback.className = `payment-feedback payment-feedback-${type}`;
+    paymentFeedback.hidden = false;
+  }
+
+  function clearPaymentMessage() {
+    paymentFeedback.hidden = true;
+    paymentFeedback.textContent = "";
+  }
+
+  function resetPayButton() {
+    payButton.disabled = false;
+    payButton.innerHTML = defaultButtonLabel;
+  }
+
+  async function markPaymentFailed(orderData) {
+    try {
+      await fetch("/bookings/<%= listing._id %>/payment-failed", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ bookingId: orderData.bookingId, razorpay_order_id: orderData.orderId }),
+      });
+    } catch (_) {
+      // The user can safely retry payment even if this status update is unavailable.
+    }
+  }
+
+  checkInInput.addEventListener("change", () => {
+    checkOutInput.min = checkInInput.value || today;
+    if (checkOutInput.value && checkOutInput.value <= checkInInput.value) checkOutInput.value = "";
+  });
+
+  paymentForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    clearPaymentMessage();
+
+    if (!paymentForm.checkValidity()) {
+      paymentForm.reportValidity();
+      return;
+    }
+
+    if (checkOutInput.value <= checkInInput.value || Number(guestsInput.value) < 1) {
+      showPaymentMessage("Choose a check-out date after check-in and at least one guest.");
+      return;
+    }
+
+    payButton.disabled = true;
+    payButton.textContent = "Preparing payment...";
+
+    try {
+      const formData = new FormData(paymentForm);
+      const orderResponse = await fetch("/bookings/<%= listing._id %>/create-order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(Object.fromEntries(formData)),
+      });
+      const orderData = await orderResponse.json();
+
+      if (!orderResponse.ok) {
+        throw new Error(orderData.message || "Unable to start payment.");
+      }
+
+      let checkoutCompleted = false;
+      const razorpay = new Razorpay({
+        key: orderData.key,
+        amount: orderData.amount,
+        currency: orderData.currency,
+        name: "WanderLust",
+        description: orderData.listingTitle,
+        order_id: orderData.orderId,
+        prefill: {
+          name: orderData.userName,
+          email: orderData.userEmail,
+        },
+        theme: { color: "#fe424d" },
+        handler: async (response) => {
+          checkoutCompleted = true;
+          const verifyResponse = await fetch("/bookings/<%= listing._id %>/verify-payment", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ ...response, bookingId: orderData.bookingId }),
+          });
+          const verifyData = await verifyResponse.json();
+
+          if (!verifyResponse.ok) {
+            showPaymentMessage(verifyData.message || "Payment could not be verified. No booking was confirmed.");
+            resetPayButton();
+            return;
+          }
+
+          window.location.href = "/bookings";
+        },
+        modal: {
+          ondismiss: async () => {
+            if (!checkoutCompleted) {
+              await markPaymentFailed(orderData);
+              showPaymentMessage("Payment was cancelled. No booking was confirmed.");
+            }
+            resetPayButton();
+          },
+        },
+      });
+
+      razorpay.on("payment.failed", async (response) => {
+        await markPaymentFailed(orderData);
+        showPaymentMessage(response.error?.description || "Payment failed. Please try again or use another payment method.");
+        resetPayButton();
+      });
+
+      razorpay.open();
+    } catch (error) {
+      showPaymentMessage(error.message || "Unable to start payment. Please try again.");
+      resetPayButton();
+    }
+  });
+</script>

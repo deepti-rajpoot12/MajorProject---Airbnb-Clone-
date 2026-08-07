@@ -1,0 +1,91 @@
+<% layout("/layouts/boilerplate") %>
+<main class="booking-listing-page py-5">
+    <div class="booking-page-heading">
+        <p class="booking-page-kicker">Your travel plans</p>
+        <h2>My Bookings</h2>
+        <p>View your reserved stays and payment details in one place.</p>
+    </div>
+
+    <% if(bookings.length === 0){ %>
+
+        <div class="booking-empty-state">
+            <i class="fa-regular fa-calendar-xmark"></i>
+            <h5>No bookings yet</h5>
+            <p>When you reserve a stay, it will appear here.</p>
+            <a href="/listings" class="btn btn-danger">Explore stays</a>
+        </div>
+
+    <% } else { %>
+
+        <div class="row g-4">
+
+            <% bookings.forEach((booking)=>{ %>
+
+                <div class="col-xl-4 col-md-6">
+
+                    <article class="card booking-card h-100">
+
+                        <div class="booking-image-wrap">
+                            <img
+                                src="<%= booking.listing.image.url %>"
+                                alt="<%= booking.listing.title %>"
+                                class="booking-img"
+                            >
+                            <span class="booking-status booking-status-<%= booking.bookingStatus.toLowerCase() %>">
+                                <%= booking.bookingStatus %>
+                            </span>
+                        </div>
+
+                        <div class="card-body">
+
+                            <h4 class="card-title">
+                                <%= booking.listing.title %>
+                            </h4>
+
+                            <p class="booking-location">
+                                <i class="fa-solid fa-location-dot"></i>
+                                <%= booking.listing.location %>,
+                                <%= booking.listing.country %>
+                            </p>
+
+                            <div class="booking-dates">
+                                <div>
+                                    <span>Check-in</span>
+                                    <strong><%= booking.checkIn.toDateString() %></strong>
+                                </div>
+                                <div>
+                                    <span>Check-out</span>
+                                    <strong><%= booking.checkOut.toDateString() %></strong>
+                                </div>
+                            </div>
+
+                            <div class="booking-summary">
+                                <span><i class="fa-solid fa-user-group"></i> <%= booking.guests %> guest<%= booking.guests > 1 ? "s" : "" %></span>
+                                <strong>₹<%= booking.totalPrice %></strong>
+                            </div>
+
+                            <div class="booking-card-footer">
+                                <span class="booking-payment payment-<%= booking.paymentStatus.toLowerCase() %>">
+                                    <i class="fa-solid fa-credit-card"></i>
+                                    <%= booking.paymentStatus %>
+                                </span>
+
+                                <a href="/listings/<%= booking.listing._id %>" class="booking-view-link">
+                                    View stay <i class="fa-solid fa-arrow-right"></i>
+                                </a>
+                            </div>
+
+                        </div>
+
+                    </article>
+
+                </div>
+
+            <% }) %>
+
+        </div>
+
+    <% } %>
+
+</main>
+
