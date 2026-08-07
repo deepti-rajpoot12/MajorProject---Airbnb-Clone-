@@ -49,11 +49,11 @@
       
       <div class="navbar-nav ms-md-auto site-nav-links">
         <a class="nav-link" href="/listings/new">StayEase your home</a>
-        <% if(!currUser) { %>
+        <% if(typeof currUser === 'undefined' || !currUser) { %>
           <a class="nav-link " href="/signup"><b>Sign up</b></a>
           <a class="nav-link" href="/login"><b>Log in</b></a>
         <% } %>
-        <% if(currUser) { %>
+        <% if(typeof currUser !== 'undefined' && currUser) { %>
 
           <a class="nav-link" href="/bookings">
     <b>My Bookings</b>

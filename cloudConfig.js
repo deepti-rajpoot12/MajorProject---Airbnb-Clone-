@@ -10,7 +10,7 @@ cloudinary.v2.config({
 const storage = new multerStorage({
     cloudinary : cloudinary,
     params: {
-        folder: "wanderlust_DEV",
+        folder: "stayease_DEV",
         allowedFormats: ["png", "jpeg", "jpg"],
     },
 });

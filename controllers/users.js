@@ -10,11 +10,11 @@ module.exports.signup = async (req, res) =>{
         const newUser = new User({email, username});
         const registeredUser = await User.register(newUser, password);
         console.log(registeredUser);
-        req.login(registeredUser, (err) =>{
+            req.login(registeredUser, (err) =>{
             if(err) {
                 return next(err);
             }
-            req.flash("success", "Welcome to Wanderlust !");
+            req.flash("success", "Welcome to StayEase !");
             res.redirect("/listings"); 
         })
             
@@ -30,7 +30,7 @@ module.exports.renderLoginForm = (req, res) =>{
 };
 
 module.exports.login = async(req , res) =>{
-    req.flash( "success","Welcome back to Wanderlust!");
+    req.flash( "success","Welcome back to StayEase!");
     let redirectUrl = res.locals.redirectUrl || "listings";
     res.redirect(redirectUrl);
 

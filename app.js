@@ -1,6 +1,8 @@
 if (process.env.NODE_ENV != "production"){
     require("dotenv").config();
 }
+const dns = require("dns");
+dns.setServers(["1.10.10.10", "8.8.8.8"]);
 const express = require("express");
 const app = express();
 const { default: mongoose } = require("mongoose");
@@ -21,6 +23,9 @@ const userRouter = require("./routes/user.js");
 const bookingRouter = require("./routes/booking");
 
 const dbURL = process.env.ATLASDB_URL;
+
+dns.setServers(["1.10.10.10", "8.8.8.8"]);
+
 main()
     .then(() => {
         console.log("connected to db");
@@ -82,7 +87,7 @@ passport.deserializeUser(User.deserializeUser());
 app.use((req, res, next )=>{
     res.locals.success = req.flash("success");
     res.locals.error = req.flash("error");
-    res.locals.currUser = req.user;
+    res.locals.currUser = req.user || null;
     next();
 })
 
